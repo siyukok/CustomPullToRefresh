@@ -6,15 +6,16 @@
     android:layout_height="match_parent"
     tools:context="com.alias.custompulltorefresh.MainActivity">
 
-    <com.alias.custompulltorefresh.widget.RefreshableView
+    <com.alias.custompulltorefresh.widget.RefreshableView xmlns:android="http://schemas.android.com/apk/res/com.alias.custompulltorefresh"
         android:id="@+id/refresh_main"
+        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        app:damp="2">
 
         <ListView
             android:id="@+id/lv_main"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:layout_width="match_parent">
 
         </ListView>
     </com.alias.custompulltorefresh.widget.RefreshableView>
