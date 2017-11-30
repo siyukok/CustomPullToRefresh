@@ -2,6 +2,7 @@ package com.alias.custompulltorefresh.widget;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.TypedArray;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -23,7 +24,7 @@ import com.alias.custompulltorefresh.R;
  * Created by ASUS on 2017/11/29.
  */
 
-public class RefreshableView extends LinearLayout implements View.OnTouchListener{
+public class RefreshableView extends LinearLayout implements View.OnTouchListener {
 
     /**
      * 下拉状态
@@ -49,6 +50,11 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
      * 下拉头部回滚的速度
      */
     public static final int SCROLL_SPEED = -20;
+
+    /**
+     * 阻尼系数
+     */
+    public static int SCROLL_DAMP = 2;
 
     /**
      * 一分钟的毫秒值，用于判断上次的更新时间
@@ -144,7 +150,8 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
      * 当前处理什么状态，可选值有STATUS_PULL_TO_REFRESH, STATUS_RELEASE_TO_REFRESH,
      * STATUS_REFRESHING 和 STATUS_REFRESH_FINISHED
      */
-    private int currentStatus = STATUS_REFRESH_FINISHED;;
+    private int currentStatus = STATUS_REFRESH_FINISHED;
+    ;
 
     /**
      * 记录上一次的状态是什么，避免进行重复操作
@@ -179,12 +186,24 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
      */
     public RefreshableView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.RefreshableView);
+        int count = typedArray.getIndexCount();
+        for (int i = 0; i < count; i++){
+            int itemId = typedArray.getIndex(i); // 获取某个属性的Id值
+            switch (itemId) {
+                case R.styleable.RefreshableView_damp: // 设置当前按钮的状态
+                    SCROLL_DAMP = typedArray.getInteger(itemId, 2);
+                    break;
+                default:
+                    break;
+            }
+        }
+            preferences = PreferenceManager.getDefaultSharedPreferences(context);
         header = LayoutInflater.from(context).inflate(R.layout.ptr_head, null, true);
-        progressBar = (ProgressBar) header.findViewById(R.id.progress_bar);
-        arrow = (ImageView) header.findViewById(R.id.arrow);
-        description = (TextView) header.findViewById(R.id.description);
-        updateAt = (TextView) header.findViewById(R.id.updated_at);
+        progressBar = header.findViewById(R.id.progress_bar);
+        arrow = header.findViewById(R.id.arrow);
+        description = header.findViewById(R.id.description);
+        updateAt = header.findViewById(R.id.updated_at);
         touchSlop = ViewConfiguration.get(context).getScaledTouchSlop();
         refreshUpdatedAtValue();
         setOrientation(VERTICAL);
@@ -236,7 +255,7 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
                         }
                         // 通过偏移下拉头的topMargin值，来实现下拉效果
                         //(distance / 2)相当于控制阻尼系数
-                        headerLayoutParams.topMargin = (distance / 2) + hideHeaderHeight;
+                        headerLayoutParams.topMargin = (distance / SCROLL_DAMP) + hideHeaderHeight;
                         header.setLayoutParams(headerLayoutParams);
                     }
                     break;
@@ -272,10 +291,8 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
     /**
      * 给下拉刷新控件注册一个监听器。
      *
-     * @param listener
-     *            监听器的实现。
-     * @param id
-     *            为了防止不同界面的下拉刷新在上次更新时间上互相有冲突， 请不同界面在注册下拉刷新监听器时一定要传入不同的id。
+     * @param listener 监听器的实现。
+     * @param id       为了防止不同界面的下拉刷新在上次更新时间上互相有冲突， 请不同界面在注册下拉刷新监听器时一定要传入不同的id。
      */
     public void setOnRefreshListener(PullToRefreshListener listener, int id) {
         mListener = listener;
@@ -481,8 +498,7 @@ public class RefreshableView extends LinearLayout implements View.OnTouchListene
     /**
      * 使当前线程睡眠指定的毫秒数。
      *
-     * @param time
-     *            指定当前线程睡眠多久，以毫秒为单位
+     * @param time 指定当前线程睡眠多久，以毫秒为单位
      */
     private void sleep(int time) {
         try {
